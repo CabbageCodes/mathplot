@@ -11,9 +11,6 @@ MyFunc1 = MathFunc("cos(x)",0)
 MyFunc1.setderivlist(["cos(x)","-sin(x)","-cos(x)","sin(x)","cos(x)"])
 MyFunc1.snaps = [0,pi/2,pi,2*pi,3*pi/2,5*pi/2,-pi/2,-3*pi/2,-5*pi/2,-pi,-2*pi]
 
-# MyFunc1 = MathFunc("exp(x)")
-# MyFunc1.evalmax = 4
-# MyFunc1.setderivlist(["exp(x)","exp(x)","exp(x)","exp(x)","exp(x)","exp(x)"])
 
 mainenv.add_func(MyFunc1)
 MyFunc1.do_drawtext = 1
@@ -23,28 +20,8 @@ MyFunc1.text = MyFunc1.formula
 MyFunc1.add_button(Button("add taylor",[MyFunc1,mainenv],text = "Add Taylor polynomial"),mainenv)
 MyFunc1.add_button(Button("change func",[MyFunc1,mainenv],text = "Change formula"),mainenv)
 
-# MyFunc2 = MathFunc("x",0)
-# MyFunc2.type = "non-static"
-
-# MyTaylor1 = Taylor(MyFunc1,3,mainenv)
-# mainenv.add_taylor(MyTaylor1)
-# poly_deg = 3
-###
-
-# MyTaylor = Poly(GiveTaylorList(MyFunc1,0,poly_deg))
-# MyFunc2.setfunc(MyTaylor.giveformula(),mainenv)
-# MyFunc2.setgraphparam(color_green,1)
-# MyFunc2.text = GiveTaylorText(MyFunc1,0,3)
-# MyTaylor.linecolor = MyFunc2.color
-
 adjust_coef_mode = 0
 move_coef_slider = 0
-
-# MyFunc2.do_drawtext = 1
-# MyFunc2.drawtextmode = "up right"
-
-# MySlider1 = GraphSlider(MyFunc1)
-# mainenv.add_slider(MySlider1)
 
 myrange = np.linspace(mainenv.plotlimitX[0],mainenv.plotlimitX[1],1000)
 mainenv.setallpoints()
@@ -56,13 +33,10 @@ move_plotrect_mode = 0
 
 running = 1
 move_slider_mode = 0
-# chosen_slider = MySlider1
 
 prev_time = Time.time()
 FPS = 120
 
-
-# text_found = 0
 
 while running:
     for event in pygame.event.get():
