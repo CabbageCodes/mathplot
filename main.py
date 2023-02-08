@@ -1,4 +1,3 @@
-import pygame
 from mathfunc import *
 
 mainenv = PlotEnv([1800,1200],[0,0,0])
