@@ -144,7 +144,7 @@ class Poly:
             termoffset = Xoffset + inioffset + k * (self.coefspace + self.termspace + self.plusspace) - (k>0)*self.termspace
             env.screen.blit(text_coef,[termoffset,Yoffset])
             self.clickhitboxes.append([termoffset,Yoffset,coef_textsize[0]+15,coef_textsize[1]+15])
-            env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY - 35])
+            env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY * 0.5])
             if k > 0:
                 DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + env.textY/2],2,[255,255,255])
                 env.screen.blit(text_term,[termoffset + self.coefspace+10,Yoffset])
@@ -165,8 +165,8 @@ class PlotEnv:
         # self.ymidpoint = floor(self.ydim/2)
         self.bgcolor = bgcolor
         pygame.init()
-        self.main_font = pygame.font.Font('computer-modern\cmunorm.ttf',30)
-        self.big_font = pygame.font.Font('computer-modern\cmunorm.ttf',50)
+        self.main_font = pygame.font.Font('computer-modern\cmunorm.ttf',20)
+        self.big_font = pygame.font.Font('computer-modern\cmunorm.ttf',30)
         pygame.display.set_caption('My function plotter')
         self.screen = pygame.display.set_mode(self.dims) #,pygame.RESIZABLE)
         self.funcs = []
@@ -610,6 +610,7 @@ class Slider:
         pygame.draw.rect(env.screen,self.Scolor,self.Srect)
 
         fullsize = env.big_font.size("a0 = " + str(D1000(self.poly.coefs[self.coef_pick][0])))
+        coef_textsize = env.big_font.size("a")
 
         pygame.draw.rect(env.screen,[0,0,0],[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - env.textY/2 + 5,fullsize[0],fullsize[1] - 10])
 
@@ -617,7 +618,7 @@ class Slider:
         # coef_textsize = env.big_font.size("a")
         text2 = env.main_font.render(str(self.coef_pick),True,self.poly.coefcolor)
         env.screen.blit(text1,[self.Srect[0] + self.Srect[2] + 20, self.Srect[1]  - env.textY/2])
-        env.screen.blit(text2,[self.Srect[0] + self.Srect[2] + 20 + env.textY/2, self.Srect[1] +  env.textY/2 - 35])
+        env.screen.blit(text2,[self.Srect[0] + self.Srect[2] + 20 + coef_textsize[0], self.Srect[1]])
         str1 = " = " + str(D1000(self.poly.coefs[self.coef_pick][0]))
         text3 = env.big_font.render(str1,True,[255,255,255])
         env.screen.blit(text3,[self.Srect[0] + self.Srect[2] + 60, self.Srect[1] - env.textY/2])

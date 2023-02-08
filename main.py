@@ -1,6 +1,6 @@
 from mathfunc import *
 
-mainenv = PlotEnv([1800,1200],[0,0,0])
+mainenv = PlotEnv([1400,800],[0,0,0])
 mainenv.set_plot_limits([-8,8],[-4,5])
 mainenv.axescolor = [150,150,150]
 
