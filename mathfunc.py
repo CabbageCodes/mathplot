@@ -92,6 +92,13 @@ class Poly:
         self.coefcolor = [255,150,150]
         self.initext = "g(x) = "
         self.clickhitboxes = []
+
+        self.draw_id = 0
+
+        self.coefspace = 0
+        self.termspace = 0
+        self.plusspace = 0
+
     def giveformula(self):
         stra = ""
         for k in range(self.degree):
@@ -107,7 +114,7 @@ class Poly:
             self.centertext = "(" + str(D100(self.center)) + ")"
         else:
             self.centertext = str(D100(self.center))
-    def draw(self,env):
+    def drawtext(self,env):
         self.clickhitboxes = []
         if self.center == 0.0:
             txt = "x"
@@ -125,10 +132,9 @@ class Poly:
         initxt = env.big_font.render(self.initext,True,[255,255,255])
         inisize = env.big_font.size(self.initext)
         inioffset = 30 + 20 + inisize[0]
-        Yoffset = 30
         Xoffset = 30
-        TextY = inisize[1]
-        pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + TextY],4)
+        Yoffset = 30 + self.draw_id * (env.textY + 10)
+        pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
         text_plus = env.big_font.render("+",True,[255,255,255])
         env.screen.blit(initxt,[Xoffset + 50,Yoffset])
         for k in range(self.degree):
@@ -138,9 +144,9 @@ class Poly:
             termoffset = Xoffset + inioffset + k * (self.coefspace + self.termspace + self.plusspace) - (k>0)*self.termspace
             env.screen.blit(text_coef,[termoffset,Yoffset])
             self.clickhitboxes.append([termoffset,Yoffset,coef_textsize[0]+15,coef_textsize[1]+15])
-            env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + TextY - 35])
+            env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY - 35])
             if k > 0:
-                DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + TextY/2],2,[255,255,255])
+                DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + env.textY/2],2,[255,255,255])
                 env.screen.blit(text_term,[termoffset + self.coefspace+10,Yoffset])
             if k > 1:
                 env.screen.blit(txt_exp,[termoffset + self.coefspace + term_textsize[0] + 10,Yoffset - 5])
@@ -177,6 +183,7 @@ class PlotEnv:
         self.redraw = 1
 
         self.pointnum = 5000
+        self.pointnum = 5000
 
         self.old_origin = [0,0]
 
@@ -199,34 +206,52 @@ class PlotEnv:
             [198,211,150]
         ]
         self.total_graphs = 0
+        self.graph_names = [
+            "f",
+            "g",
+            "h",
+            "u",
+            "v",
+            "a",
+            "b",
+            "c"
+        ]
+
+        inisize = self.big_font.size("f(x) = ")
+        self.textY = inisize[1]
 
     def add_func(self,func1):
+        func1.draw_id = len(self.funcs)
         func1.set_hitbox(self)
-        func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1]+80])
+        func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1]+80 + (10 + self.textY) * func1.draw_id])
         func1.fmenu.setbuttons(self)
         func1.setpoints(self.give_range_long())
         func1.setgraph(self)
-        func1.draw_id = len(self.funcs)
         self.funcs.append(func1)
         self.set_graph_limits()
         self.redraw = 1
 
         func1.setgraphparam(self.graph_colors[self.total_graphs],1)
+        func1.initext = self.graph_names[self.total_graphs] + "(x) = "
         self.total_graphs += 1
 
     def add_taylor(self,tay1):
+        tay1.func.draw_id = len(self.taylors)
+        tay1.taylorpoly.draw_id = len(self.taylors)
         tay1.func.set_hitbox(self)
         tay1.func.fmenu.setpos([tay1.func.hitbox[0],tay1.func.hitbox[1] + 80])
         tay1.func.fmenu.setbuttons(self)
         tay1.func.setpoints(self.give_range_long())
         tay1.func.setgraph(self)
-        tay1.func.draw_id = len(self.taylors)
+        # tay1.func.draw_id = len(self.taylors)
         self.taylors.append(tay1)
         self.set_graph_limits()
         tay1.update_point(tay1.slider.pos,self)
         self.redraw = 1
 
         tay1.func.setgraphparam(self.graph_colors[self.total_graphs],1)
+        tay1.taylorpoly.linecolor = tay1.func.color
+        tay1.taylorpoly.initext = self.graph_names[self.total_graphs] + "(x) = "
         self.total_graphs += 1
 
     def set_plot_limits(self,limX,limY):
@@ -335,7 +360,7 @@ class PlotEnv:
 
         for t in self.taylors:
             t.plot(self)
-            t.taylorpoly.draw(self)
+            t.taylorpoly.drawtext(self)
 
         for s in self.sliders:
             s.draw(self)
@@ -376,6 +401,7 @@ class PlotEnv:
             self.redraw = 1
             for f in self.funcs:
                 f.taylor_targets.remove(taylor)
+            self.total_graphs += -1
 
 
 
@@ -582,14 +608,19 @@ class Slider:
         pygame.draw.rect(env.screen,self.color,[self.screenpos[0]+self.width/2 - 4,self.screenpos[1],8,self.length])
 
         pygame.draw.rect(env.screen,self.Scolor,self.Srect)
+
+        fullsize = env.big_font.size("a0 = " + str(D1000(self.poly.coefs[self.coef_pick][0])))
+
+        pygame.draw.rect(env.screen,[0,0,0],[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - env.textY/2 + 5,fullsize[0],fullsize[1] - 10])
+
         text1 = env.big_font.render("a",True,self.poly.coefcolor)
-        coef_textsize = env.big_font.size("a")
+        # coef_textsize = env.big_font.size("a")
         text2 = env.main_font.render(str(self.coef_pick),True,self.poly.coefcolor)
-        env.screen.blit(text1,[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - coef_textsize[1]/2])
-        env.screen.blit(text2,[self.Srect[0] + self.Srect[2] + 20 + coef_textsize[0], self.Srect[1] + coef_textsize[1]/2 - 35])
+        env.screen.blit(text1,[self.Srect[0] + self.Srect[2] + 20, self.Srect[1]  - env.textY/2])
+        env.screen.blit(text2,[self.Srect[0] + self.Srect[2] + 20 + env.textY/2, self.Srect[1] +  env.textY/2 - 35])
         str1 = " = " + str(D1000(self.poly.coefs[self.coef_pick][0]))
         text3 = env.big_font.render(str1,True,[255,255,255])
-        env.screen.blit(text3,[self.Srect[0] + self.Srect[2] + 60, self.Srect[1] - coef_textsize[1]/2])
+        env.screen.blit(text3,[self.Srect[0] + self.Srect[2] + 60, self.Srect[1] - env.textY/2])
 
 
 class FMenu:
@@ -664,6 +695,7 @@ class Taylor:
         self.degree = degree
         self.center = 0
         self.taylorpoly = Poly(GiveTaylorList(origfunc,self.center,degree))
+
 
         self.func = MathFunc("x",0)
         self.func.type = "non-static"

@@ -92,10 +92,18 @@ while running:
                     move_slider_mode = 1
                     found = 1
                     break
+
+            if not found and adjust_coef_mode:
+                box = [adjust_coef_taylor_choice.coefslider.screenpos[0],adjust_coef_taylor_choice.coefslider.screenpos[1],adjust_coef_taylor_choice.coefslider.width,adjust_coef_taylor_choice.coefslider.length]
+                if isInRect(mpos,box):
+                    found = 1
+                    if isInRect(mpos,adjust_coef_taylor_choice.coefslider.Srect,[0,5]):
+                        move_coef_slider = 1
+
             if not found:
-                i = 0
                 found_taylorpick = 0
                 for tay1 in mainenv.taylors:
+                    i = 0
                     for box in tay1.taylorpoly.clickhitboxes:
                         if isInRect(mpos,box):
                             found = 1
@@ -118,27 +126,40 @@ while running:
                         i += 1
                     if found_taylorpick:
                         break
-            if not found and adjust_coef_mode:
-                box = [adjust_coef_taylor_choice.coefslider.screenpos[0],adjust_coef_taylor_choice.coefslider.screenpos[1],adjust_coef_taylor_choice.coefslider.width,adjust_coef_taylor_choice.coefslider.length]
-                if isInRect(mpos,box):
-                    found = 1
-                    if isInRect(mpos,adjust_coef_taylor_choice.coefslider.Srect,[0,5]):
-                        move_coef_slider = 1
+                if found_taylorpick:
+                    for tay2 in mainenv.taylors:
+                        if tay2 != adjust_coef_taylor_choice:
+                            tay2.adjust_coefs = 0
             if not found:
                 for func in mainenv.funcs:
                     if isInRect(mpos,func.hitbox):
-                        open_func_menu = 1
-                        func_menu_choice = func
-                        found = 1
-                        mainenv.redraw = 1
-                        break
+                        if not open_func_menu:
+                            open_func_menu = 1
+                            func_menu_choice = func
+                            found = 1
+                            mainenv.redraw = 1
+                            break
+                        else:
+                            open_func_menu = 0
+                            func_menu_choice.fmenu.visible = 0
                 for tay in mainenv.taylors:
                     if isInRect(mpos,tay.func.hitbox):
-                        open_func_menu = 1
-                        func_menu_choice = tay.func
-                        found = 1
-                        mainenv.redraw = 1
-                        break
+                        if not open_func_menu:
+                            open_func_menu = 1
+                            func_menu_choice = tay.func
+                            found = 1
+                            mainenv.redraw = 1
+                            break
+                        else:
+                            open_func_menu = 0
+                            func_menu_choice.fmenu.visible = 0
+                if found:
+                    for func in mainenv.funcs:
+                        if func != func_menu_choice:
+                            func.fmenu.visible = 0
+                    for tay in mainenv.taylors:
+                        if tay.func != func_menu_choice:
+                            tay.func.fmenu.visible = 0
             if not found and open_func_menu:
                 for b in func_menu_choice.fmenu.buttons:
                     if isInRect(mpos,b.rect):
@@ -194,7 +215,10 @@ while running:
         # MyTaylor1.func.setfunc(MyTaylor1.taylorpoly.giveformula(),mainenv)
         mainenv.redraw = 1
     if adjust_coef_mode:
+
+
         adjust_coef_taylor_choice.coefslider.screenpos[0] = adjust_coef_taylor_choice.taylorpoly.clickhitboxes[adjust_coef_taylor_choice.coefslider.coef_pick][0]
+        adjust_coef_taylor_choice.coefslider.screenpos[1] = 120 + adjust_coef_taylor_choice.taylorpoly.draw_id * (mainenv.textY + 10)
         mainenv.redraw = 1
         if move_coef_slider:
             mpos = pygame.mouse.get_pos()
