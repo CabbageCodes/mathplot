@@ -11,6 +11,16 @@ def D10(number):
     return floor(number * 10)/10
 def D100(number):
     return floor(number * 100)/100
+
+def D100_str(number):
+    if number - floor(number) > 0:
+        X = floor(number * 100)/100
+        if X != number:
+            return str(X) + "..."
+        else:
+            return str(X)
+    else:
+        return str(int(number))
 def D1000(number):
     return floor(number * 1000)/1000
 
@@ -99,6 +109,8 @@ class Poly:
         self.termspace = 0
         self.plusspace = 0
 
+        self.text_type = "formula view"
+
     def giveformula(self):
         stra = ""
         for k in range(self.degree):
@@ -115,46 +127,113 @@ class Poly:
         else:
             self.centertext = str(D100(self.center))
     def drawtext(self,env):
-        self.clickhitboxes = []
-        if self.center == 0.0:
-            txt = "x"
-            text_term = env.big_font.render(txt,True,[255,255,255])
-        else:
-            # txt = "(x - " + self.centertext + ")"
-            txt = "(x - p)"
-            text_term = env.big_font.render(txt,True,[255,255,255])
-        term_textsize = env.big_font.size(txt)
-        coef_textsize = env.big_font.size("a")
-        self.coefspace = coef_textsize[0] + 20
-        self.termspace = term_textsize[0] + 20
-        self.plusspace = self.coefspace
+        if self.text_type == "coef view":
+            self.clickhitboxes = []
+            if self.center == 0.0:
+                txt = "x"
+                text_term = env.big_font.render(txt,True,[255,255,255])
+            else:
+                # txt = "(x - " + self.centertext + ")"
+                txt = "(x - p)"
+                text_term = env.big_font.render(txt,True,[255,255,255])
+            term_textsize = env.big_font.size(txt)
+            coef_textsize = env.big_font.size("a")
+            self.coefspace = coef_textsize[0] + 20
+            self.termspace = term_textsize[0] + 20
+            self.plusspace = self.coefspace
 
-        initxt = env.big_font.render(self.initext,True,[255,255,255])
-        inisize = env.big_font.size(self.initext)
-        inioffset = 30 + 20 + inisize[0]
-        Xoffset = 30
-        Yoffset = 30 + self.draw_id * (env.textY + 10)
-        pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
-        text_plus = env.big_font.render("+",True,[255,255,255])
-        env.screen.blit(initxt,[Xoffset + 50,Yoffset])
-        for k in range(self.degree):
-            text_coef = env.big_font.render("a",True,self.coefcolor)
-            txt_exp = env.main_font.render(str(k),True,[255,255,255])
-            txt_sub = env.main_font.render(str(k),True,self.coefcolor)
-            termoffset = Xoffset + inioffset + k * (self.coefspace + self.termspace + self.plusspace) - (k>0)*self.termspace
-            env.screen.blit(text_coef,[termoffset,Yoffset])
-            self.clickhitboxes.append([termoffset,Yoffset,coef_textsize[0]+15,coef_textsize[1]+15])
-            env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY * 0.5])
-            if k > 0:
-                DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + env.textY/2],2,[255,255,255])
-                env.screen.blit(text_term,[termoffset + self.coefspace+10,Yoffset])
-            if k > 1:
-                env.screen.blit(txt_exp,[termoffset + self.coefspace + term_textsize[0] + 10,Yoffset - 5])
-            if k < self.degree - 1:
-                if k == 0:
-                    env.screen.blit(text_plus,[termoffset + self.coefspace,Yoffset])
+            initxt = env.big_font.render(self.initext,True,[255,255,255])
+            inisize = env.big_font.size(self.initext)
+            inioffset = 30 + 20 + inisize[0]
+            Xoffset = 30
+            Yoffset = 30 + self.draw_id * (env.textY + 10)
+            pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
+            text_plus = env.big_font.render("+",True,[255,255,255])
+            env.screen.blit(initxt,[Xoffset + 50,Yoffset])
+            for k in range(self.degree):
+                text_coef = env.big_font.render("a",True,self.coefcolor)
+                txt_exp = env.main_font.render(str(k),True,[255,255,255])
+                txt_sub = env.main_font.render(str(k),True,self.coefcolor)
+                termoffset = Xoffset + inioffset + k * (self.coefspace + self.termspace + self.plusspace) - (k>0)*self.termspace
+                env.screen.blit(text_coef,[termoffset,Yoffset])
+                self.clickhitboxes.append([termoffset,Yoffset,coef_textsize[0]+15,coef_textsize[1]+15])
+                env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY * 0.5])
+                if k > 0:
+                    DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + env.textY/2],2,[255,255,255])
+                    env.screen.blit(text_term,[termoffset + self.coefspace+10,Yoffset])
+                if k > 1:
+                    env.screen.blit(txt_exp,[termoffset + self.coefspace + term_textsize[0] + 10,Yoffset - 5])
+                if k < self.degree - 1:
+                    if k == 0:
+                        env.screen.blit(text_plus,[termoffset + self.coefspace,Yoffset])
+                    else:
+                        env.screen.blit(text_plus,[termoffset + self.coefspace + term_textsize[0] + 20,Yoffset])
+        elif self.text_type == "formula view":
+            self.clickhitboxes = []
+            if self.center == 0.0:
+                txt = "x"
+                text_term = env.big_font.render(txt,True,[255,255,255])
+            else:
+                txt_center = D100_str(abs(self.center))
+                if self.center < 0:
+                    txt = "(x + " + txt_center + ")"
                 else:
-                    env.screen.blit(text_plus,[termoffset + self.coefspace + term_textsize[0] + 20,Yoffset])
+                    txt = "(x - " + txt_center + ")"
+                text_term = env.big_font.render(txt,True,[255,255,255])
+            term_textsize = env.big_font.size(txt)
+            self.termspace = term_textsize[0] + 20
+            plusspace = env.big_font.size("+ ")[0]
+            minusspace = env.big_font.size("- ")[0]
+
+            initxt = env.big_font.render(self.initext,True,[255,255,255])
+            inisize = env.big_font.size(self.initext)
+            inioffset = 30 + 20 + inisize[0]
+            Xoffset = 30
+            Yoffset = 30 + self.draw_id * (env.textY + 10)
+
+            pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
+            text_plus = env.big_font.render("+",True,[255,255,255])
+            text_minus = env.big_font.render("-",True,self.coefcolor)
+            env.screen.blit(initxt,[Xoffset + 50,Yoffset])
+
+            current_offset = Xoffset + inioffset
+
+            text_coef = env.big_font.render(D100_str(self.coefs[0][0]),True,self.coefcolor)
+            env.screen.blit(text_coef,[current_offset,Yoffset])
+
+            coef_textsize = env.big_font.size(D100_str(self.coefs[0][0]))
+            self.coefspace = coef_textsize[0] + 10
+            current_offset += self.coefspace
+            for k in range(1, self.degree):
+                if self.coefs[k][0] != 0:
+                    if self.coefs[k][0] > 0:
+                        env.screen.blit(text_plus,[current_offset,Yoffset])
+                        current_offset += plusspace
+                    else:
+                        env.screen.blit(text_minus,[current_offset,Yoffset])
+                        current_offset += minusspace
+
+                    text_coef = env.big_font.render(D100_str(abs(self.coefs[k][0])),True,self.coefcolor)
+                    txt_exp = env.main_font.render(str(k),True,[255,255,255])
+
+                    env.screen.blit(text_coef,[current_offset,Yoffset])
+
+                    coef_textsize = env.big_font.size(D100_str(abs(self.coefs[k][0])))
+                    self.coefspace = coef_textsize[0] + 10
+                    current_offset += self.coefspace
+
+                    DrawDisk(env.screen,[current_offset,Yoffset + env.textY/2],2,[255,255,255])
+                    env.screen.blit(text_term,[current_offset + 10,Yoffset])
+                    if k > 1:
+                        env.screen.blit(txt_exp,[current_offset + term_textsize[0] + 10,Yoffset - 5])
+                    current_offset += self.termspace
+        elif self.text_type == "hide view":
+            Xoffset = 30
+            Yoffset = 30 + self.draw_id * (env.textY + 10)
+            pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
+            initxt = env.big_font.render(self.initext[0:4],True,[255,255,255])
+            env.screen.blit(initxt,[Xoffset + 50,Yoffset])
+
 
 class PlotEnv:
     def __init__(self,dims,bgcolor):
@@ -195,6 +274,9 @@ class PlotEnv:
         self.add_text = ""
         self.text_target_func = 0
 
+        self.adjust_coef_mode = 0
+        self.move_coef_slider = 0
+
         self.graph_colors = [
             [103,167,214],
             [166,241,170],
@@ -223,7 +305,7 @@ class PlotEnv:
     def add_func(self,func1):
         func1.draw_id = len(self.funcs)
         func1.set_hitbox(self)
-        func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1]+80 + (10 + self.textY) * func1.draw_id])
+        func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1] + 50 + (10 + self.textY) * func1.draw_id])
         func1.fmenu.setbuttons(self)
         func1.setpoints(self.give_range_long())
         func1.setgraph(self)
@@ -239,7 +321,7 @@ class PlotEnv:
         tay1.func.draw_id = len(self.taylors)
         tay1.taylorpoly.draw_id = len(self.taylors)
         tay1.func.set_hitbox(self)
-        tay1.func.fmenu.setpos([tay1.func.hitbox[0],tay1.func.hitbox[1] + 80])
+        tay1.func.fmenu.setpos([tay1.func.hitbox[0],tay1.func.hitbox[1] + 60])
         tay1.func.fmenu.setbuttons(self)
         tay1.func.setpoints(self.give_range_long())
         tay1.func.setgraph(self)
@@ -680,15 +762,31 @@ class Button:
         elif self.type == "add degree":
             if self.tied_objects[0].degree < len(self.tied_objects[0].origfunc.derivlist):
                 self.tied_objects[0].degree += 1
+            self.tied_objects[0].coefslider.coef_pick = -1
+            self.tied_objects[0].adjust_coefs = 0
+            self.tied_objects[1].adjust_coef_mode = 0
+            self.tied_objects[1].move_coef_slider = 0
             self.tied_objects[0].update_point(self.tied_objects[0].center,self.tied_objects[1])
 
         elif self.type == "lower degree":
             if self.tied_objects[0].degree > 1:
                 self.tied_objects[0].degree += -1
+            self.tied_objects[0].coefslider.coef_pick = -1
+            self.tied_objects[0].adjust_coefs = 0
+            self.tied_objects[1].adjust_coef_mode = 0
+            self.tied_objects[1].move_coef_slider = 0
             self.tied_objects[0].update_point(self.tied_objects[0].center,self.tied_objects[1])
 
         elif self.type == "delete taylor":
             self.tied_objects[1].erase_taylor(self.tied_objects[0])
+
+        elif self.type == "toggle taylor text":
+            if self.tied_objects[0].taylorpoly.text_type == "formula view":
+                self.tied_objects[0].taylorpoly.text_type = "coef view"
+            elif self.tied_objects[0].taylorpoly.text_type == "coef view":
+                self.tied_objects[0].taylorpoly.text_type = "hide view"
+            else:
+                self.tied_objects[0].taylorpoly.text_type = "formula view"
 
 class Taylor:
     def __init__(self,origfunc,degree,env):
@@ -701,6 +799,7 @@ class Taylor:
         self.func = MathFunc("x",0)
         self.func.type = "non-static"
         self.func.drawtextmode = "up left taylor"
+        self.func.add_button(Button("toggle taylor text",[self],text = "Toggle formula"),env)
         self.func.add_button(Button("add degree",[self,env],text = "Add term"),env)
         self.func.add_button(Button("lower degree",[self,env],text = "Remove term"),env)
         self.func.add_button(Button("delete taylor",[self,env],text = "Delete"),env)

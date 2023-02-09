@@ -20,8 +20,6 @@ MyFunc1.text = MyFunc1.formula
 MyFunc1.add_button(Button("add taylor",[MyFunc1,mainenv],text = "Add Taylor polynomial"),mainenv)
 MyFunc1.add_button(Button("change func",[MyFunc1,mainenv],text = "Change formula"),mainenv)
 
-adjust_coef_mode = 0
-move_coef_slider = 0
 
 myrange = np.linspace(mainenv.plotlimitX[0],mainenv.plotlimitX[1],1000)
 mainenv.setallpoints()
@@ -67,22 +65,22 @@ while running:
                     found = 1
                     break
 
-            if not found and adjust_coef_mode:
+            if not found and mainenv.adjust_coef_mode:
                 box = [adjust_coef_taylor_choice.coefslider.screenpos[0],adjust_coef_taylor_choice.coefslider.screenpos[1],adjust_coef_taylor_choice.coefslider.width,adjust_coef_taylor_choice.coefslider.length]
                 if isInRect(mpos,box):
                     found = 1
                     if isInRect(mpos,adjust_coef_taylor_choice.coefslider.Srect,[0,5]):
-                        move_coef_slider = 1
+                        mainenv.move_coef_slider = 1
 
             if not found:
                 found_taylorpick = 0
-                for tay1 in mainenv.taylors:
+                for tay1 in [t for t in mainenv.taylors if t.taylorpoly.text_type == "coef view"]:
                     i = 0
                     for box in tay1.taylorpoly.clickhitboxes:
                         if isInRect(mpos,box):
                             found = 1
-                            if not adjust_coef_mode:
-                                adjust_coef_mode = 1
+                            if not mainenv.adjust_coef_mode:
+                                mainenv.adjust_coef_mode = 1
                                 adjust_coef_taylor_choice = tay1
                                 tay1.coefslider.coef_pick = i
                                 tay1.coefslider.Sval = tay1.taylorpoly.coefs[tay1.coefslider.coef_pick][0]
@@ -91,8 +89,8 @@ while running:
                                 tay1.coefslider.coef_pick = i
                                 tay1.coefslider.Sval = tay1.taylorpoly.coefs[tay1.coefslider.coef_pick][0]
                             else:
-                                adjust_coef_mode = 0
-                                move_coef_slider = 0
+                                mainenv.adjust_coef_mode = 0
+                                mainenv.move_coef_slider = 0
                                 mainenv.redraw = 1
                                 tay1.adjust_coefs = 0
                             found_taylorpick = 1
@@ -143,10 +141,10 @@ while running:
                         b.get_pressed()
                         break
             if not found:
-                if adjust_coef_mode:
-                    adjust_coef_mode = 0
+                if mainenv.adjust_coef_mode:
+                    mainenv.adjust_coef_mode = 0
                     adjust_coef_taylor_choice.adjust_coefs = 0
-                move_coef_slider = 0
+                mainenv.move_coef_slider = 0
                 mainenv.redraw = 1
                 if open_func_menu:
                     open_func_menu = 0
@@ -167,8 +165,8 @@ while running:
                 # MyTaylor1.taylorpoly.setparams(GiveTaylorList(MyFunc1,chosen_slider.pos,poly_deg))
                 # MyTaylor1.func.setfunc(MyTaylor1.taylorpoly.giveformula(),mainenv)
                 mainenv.redraw = 1
-            if move_coef_slider:
-                move_coef_slider = 0
+            if mainenv.move_coef_slider:
+                mainenv.move_coef_slider = 0
                 adjust_coef_taylor_choice.coefslider.snap()
                 adjust_coef_taylor_choice.taylorpoly.coefs[adjust_coef_taylor_choice.coefslider.coef_pick][0] = adjust_coef_taylor_choice.coefslider.Sval
                 adjust_coef_taylor_choice.func.setfunc(adjust_coef_taylor_choice.taylorpoly.giveformula(),mainenv)
@@ -188,13 +186,13 @@ while running:
         # MyTaylor1.taylorpoly.setparams(GiveTaylorList(MyFunc1,chosen_slider.pos,poly_deg))
         # MyTaylor1.func.setfunc(MyTaylor1.taylorpoly.giveformula(),mainenv)
         mainenv.redraw = 1
-    if adjust_coef_mode:
+    if mainenv.adjust_coef_mode:
 
 
         adjust_coef_taylor_choice.coefslider.screenpos[0] = adjust_coef_taylor_choice.taylorpoly.clickhitboxes[adjust_coef_taylor_choice.coefslider.coef_pick][0]
         adjust_coef_taylor_choice.coefslider.screenpos[1] = 120 + adjust_coef_taylor_choice.taylorpoly.draw_id * (mainenv.textY + 10)
         mainenv.redraw = 1
-        if move_coef_slider:
+        if mainenv.move_coef_slider:
             mpos = pygame.mouse.get_pos()
             adjust_coef_taylor_choice.coefslider.Sval = adjust_coef_taylor_choice.coefslider.screen_to_val(mpos)
 
@@ -212,7 +210,7 @@ while running:
     if mainenv.redraw:
         mainenv.redraw = 0
         mainenv.drawme()
-        # if adjust_coef_mode:
+        # if mainenv.adjust_coef_mode:
         #     MyTaylor1.coefslider.draw(mainenv)
         pygame.display.flip()
     curr_time = Time.time()
