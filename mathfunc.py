@@ -12,9 +12,9 @@ def D10(number):
 def D100(number):
     return floor(number * 100)/100
 
-def D100_str(number):
+def D1000_str(number):
     if number - floor(number) > 0:
-        X = floor(number * 100)/100
+        X = floor(number * 1000)/1000
         if X != number:
             return str(X) + "..."
         else:
@@ -170,11 +170,11 @@ class Poly:
                         env.screen.blit(text_plus,[termoffset + self.coefspace + term_textsize[0] + 20,Yoffset])
         elif self.text_type == "formula view":
             self.clickhitboxes = []
-            if self.center == 0.0:
+            if abs(self.center) < 0.00000001:
                 txt = "x"
                 text_term = env.big_font.render(txt,True,[255,255,255])
             else:
-                txt_center = D100_str(abs(self.center))
+                txt_center = D1000_str(abs(self.center))
                 if self.center < 0:
                     txt = "(x + " + txt_center + ")"
                 else:
@@ -198,27 +198,37 @@ class Poly:
 
             current_offset = Xoffset + inioffset
 
-            text_coef = env.big_font.render(D100_str(self.coefs[0][0]),True,self.coefcolor)
-            env.screen.blit(text_coef,[current_offset,Yoffset])
+            found_something = 0
 
-            coef_textsize = env.big_font.size(D100_str(self.coefs[0][0]))
-            self.coefspace = coef_textsize[0] + 10
-            current_offset += self.coefspace
+            if abs(self.coefs[0][0]) > 0.00000001:
+                found_something += 1
+                text_coef = env.big_font.render(D1000_str(self.coefs[0][0]),True,self.coefcolor)
+                env.screen.blit(text_coef,[current_offset,Yoffset])
+
+                coef_textsize = env.big_font.size(D1000_str(self.coefs[0][0]))
+                self.coefspace = coef_textsize[0] + 10
+                current_offset += self.coefspace
+
             for k in range(1, self.degree):
-                if self.coefs[k][0] != 0:
+
+                if abs(self.coefs[k][0]) > 0.00000001:
+                    found_something += 1
                     if self.coefs[k][0] > 0:
-                        env.screen.blit(text_plus,[current_offset,Yoffset])
-                        current_offset += plusspace
+                        if found_something > 1:
+                            env.screen.blit(text_plus,[current_offset,Yoffset])
+                            current_offset += plusspace
                     else:
                         env.screen.blit(text_minus,[current_offset,Yoffset])
                         current_offset += minusspace
+                        if found_something == 1:
+                            current_offset -= minusspace * 0.5
 
-                    text_coef = env.big_font.render(D100_str(abs(self.coefs[k][0])),True,self.coefcolor)
+                    text_coef = env.big_font.render(D1000_str(abs(self.coefs[k][0])),True,self.coefcolor)
                     txt_exp = env.main_font.render(str(k),True,[255,255,255])
 
                     env.screen.blit(text_coef,[current_offset,Yoffset])
 
-                    coef_textsize = env.big_font.size(D100_str(abs(self.coefs[k][0])))
+                    coef_textsize = env.big_font.size(D1000_str(abs(self.coefs[k][0])))
                     self.coefspace = coef_textsize[0] + 10
                     current_offset += self.coefspace
 
@@ -227,6 +237,9 @@ class Poly:
                     if k > 1:
                         env.screen.blit(txt_exp,[current_offset + term_textsize[0] + 10,Yoffset - 5])
                     current_offset += self.termspace
+            if not found_something:
+                text_coef = env.big_font.render(str(0),True,self.coefcolor)
+                env.screen.blit(text_coef,[current_offset,Yoffset])
         elif self.text_type == "hide view":
             Xoffset = 30
             Yoffset = 30 + self.draw_id * (env.textY + 10)
@@ -785,6 +798,10 @@ class Button:
                 self.tied_objects[0].taylorpoly.text_type = "coef view"
             elif self.tied_objects[0].taylorpoly.text_type == "coef view":
                 self.tied_objects[0].taylorpoly.text_type = "hide view"
+
+                self.tied_objects[0].adjust_coefs = 0
+                self.tied_objects[1].adjust_coef_mode = 0
+                self.tied_objects[1].move_coef_slider = 0
             else:
                 self.tied_objects[0].taylorpoly.text_type = "formula view"
 
@@ -799,7 +816,7 @@ class Taylor:
         self.func = MathFunc("x",0)
         self.func.type = "non-static"
         self.func.drawtextmode = "up left taylor"
-        self.func.add_button(Button("toggle taylor text",[self],text = "Toggle formula"),env)
+        self.func.add_button(Button("toggle taylor text",[self,env],text = "Toggle formula"),env)
         self.func.add_button(Button("add degree",[self,env],text = "Add term"),env)
         self.func.add_button(Button("lower degree",[self,env],text = "Remove term"),env)
         self.func.add_button(Button("delete taylor",[self,env],text = "Delete"),env)
