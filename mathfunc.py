@@ -236,6 +236,7 @@ class Poly:
                     env.screen.blit(text_term,[current_offset + 10,Yoffset])
                     if k > 1:
                         env.screen.blit(txt_exp,[current_offset + term_textsize[0] + 10,Yoffset - 5])
+                        current_offset += minusspace * 0.3
                     current_offset += self.termspace
             if not found_something:
                 text_coef = env.big_font.render(str(0),True,self.coefcolor)
