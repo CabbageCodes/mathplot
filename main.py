@@ -113,6 +113,7 @@ while running:
             if not found:
                 for func in mainenv.funcs:
                     if isInRect(mpos,func.hitbox):
+
                         if not open_func_menu:
                             open_func_menu = 1
                             func_menu_choice = func

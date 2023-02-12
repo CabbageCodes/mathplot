@@ -1,6 +1,7 @@
 import pygame
 import time as Time
 from pygame import gfxdraw
+from sympy import diff
 from sympy import var
 from sympy import sympify
 from sympy.utilities.lambdify import lambdify
@@ -552,7 +553,7 @@ class MathFunc:
         self.snaps = []
         self.do_drawtext = 0
         self.drawtextmode = "up right"
-        self.text = self.formula
+
         self.initext = "f(x) = "
         self.draw_id = draw_id
         self.hitbox = [0,0,0,0]
@@ -576,8 +577,8 @@ class MathFunc:
         elif self.drawtextmode == "up left taylor":
             self.hitbox = [20,20 + (10+textsize[1]) * (self.draw_id),60,60]
 
-    def drawtext(self,env):
-        mystr = self.initext + self.text
+    def drawtext(self,env): # draw the formula of a function. note: this is also where the function menu hitbox will appear
+        mystr = self.initext + self.formula
         text1 = env.big_font.render(mystr,True,[255,255,255])
         textsize = env.big_font.size(mystr)
 
@@ -588,20 +589,25 @@ class MathFunc:
         elif self.drawtextmode == "up left":
             pygame.draw.line(env.screen,self.color,[30, 20 + textsize[1]/2],[60, 20 + textsize[1]/2],4)
             env.screen.blit(text1,[80, 20])
-        elif self.drawtextmode == "up right poly fixed":
-            degree = self.text.count("x")
         
-    def setfunc(self,formula,env):
+    def setfunc(self,formula,env): # if we need to change the formula of the function we call this
         self.formula = formula.replace("^","**")
+
+        self.set_hitbox(env)
+        self.fmenu.setpos([self.hitbox[0],self.hitbox[1] + 50 + (10 + env.textY) * self.draw_id])
+        self.fmenu.setbuttons(env)
+
         vx = var('x')
         self.sfunc = lambdify(vx,self.formula)
-        if self.formula == "exp(x)":
-            self.setderivlist(["exp(x)","exp(x)","exp(x)","exp(x)","exp(x)","exp(x)"])
-        elif self.formula == "cos(x)":
-            self.setderivlist(["cos(x)","-sin(x)","-cos(x)","sin(x)","cos(x)"])
+        mystr = self.formula
+        self.derivlist = []
+        for i in range(10):
+            self.derivlist.append(mystr)
+            mystr = str(diff(mystr))
+
         self.set_hitbox(env)
-        # self.setgraph(env)
-        if self.type == "static":
+
+        if self.type == "static": # the idea here is that for some functions that change a lot, it is more efficient just to recalculate their graph in the drawing range
             self.setgraph(env)
         else:
             self.reset_graph(env)
@@ -620,30 +626,25 @@ class MathFunc:
     def setpoints(self,points,drawpoints):
         self.points = points
         self.drawpoints = drawpoints
-    def setgraph(self,env):
+    def setgraph(self,env): # this changes the full graph of a function on the screen
 
-        # xcoord = self.plotrect[0] + self.plotrect[2]*(point[0] - self.plotlimitX[0])/(self.plotlimitX[1] - self.plotlimitX[0])
-        # ycoord = self.plotrect[1] + self.plotrect[3] - self.plotrect[3] * (point[1] - self.plotlimitY[0])/(self.plotlimitY[1] - self.plotlimitY[0])
-
-
+        # we calculate the value of the function in the whole point set, then change that into screen coordinates
         self.graph = map(self.sfunc,self.points)
         self.graph = [env.plotrect[1] + env.plotrect[3] - env.plotrect[3] * (PP - env.plotlimitY[0])/(env.plotlimitY[1] - env.plotlimitY[0]) for PP in self.graph]
-        # .append(env.point_to_screen([p,self.evaluate(p)]))
 
     def reset_graph(self,env):
         A = max(0,self.graphrange[0])
         B = min(self.graphrange[1]+1,env.pointnum-1)
 
+        # same as above, but we do it only in the range from A to B
+
         self.graph[A : B] = map(self.sfunc,self.points[A : B])
 
         self.graph[A : B] = [env.plotrect[1] + env.plotrect[3] - env.plotrect[3] * (PP - env.plotlimitY[0]) / (env.plotlimitY[1] - env.plotlimitY[0]) for PP in self.graph[A : B]]
-        # for k in range(max(0,self.graphrange[0]),min(self.graphrange[1]+1,env.pointnum-1)):
-        #     self.graph[k] = env.point_to_screen([self.points[k],self.evaluate(self.points[k])])
 
-    # def translate_graph(self):
 
     def plot(self,env):
-        # pygame.draw.aalines(env.screen,self.color,0,self.graph)
+        # plot the graph
         for p in range(max(0,self.graphrange[0]),min(env.pointnum-2,self.graphrange[1])):
             p1 = [self.drawpoints[p],self.graph[p]]
             p2 = [self.drawpoints[p+1],self.graph[p+1]]
@@ -652,7 +653,7 @@ class MathFunc:
                 # DrawThickLine(env.screen,p1,p2,self.thickness,self.color)
                 pygame.draw.line(env.screen,self.color,p1,p2,self.thickness+2)
 
-class GraphSlider:
+class GraphSlider: # This is a slider that moves along a graph of a function
     def __init__(self,func):
         self.func = func
         self.pos = 0
@@ -708,7 +709,7 @@ class GraphSlider:
         point2 = env.point_to_screen([self.pos,0])
         return (point[0]-spoint[0])**2+(point[1]-spoint[1])**2 < (self.radiusouter+5)**2 or (point2[0]-spoint[0])**2+(point2[1]-spoint[1])**2 < (self.radiusouter+5)**2
 
-class Slider:
+class Slider: # This slider is used to change a polynomials coefficients
     def __init__(self,poly):
         self.visible = 0
         self.color = [100,100,100]
@@ -760,7 +761,7 @@ class Slider:
         env.screen.blit(text3,[self.Srect[0] + self.Srect[2] + 60, self.Srect[1] - env.textY/2])
 
 
-class FMenu:
+class FMenu: # Functions and other objects can have a menu where there are options to do stuff with that function
     def __init__(self,buttons):
         self.buttons = buttons
         self.visible = 0
@@ -784,7 +785,7 @@ class FMenu:
 class Button:
     def __init__(self,type,tied_objects,text = "", rect = [0,0,0,0]):
         self.type = type
-        self.tied_objects = tied_objects
+        self.tied_objects = tied_objects # Each menu button needs a set of objects that it affects
         self.text = text
         self.pos = [0,0]
         self.rect = rect
@@ -802,7 +803,6 @@ class Button:
 
     def get_pressed(self):
         if self.type == "add taylor":
-            # newtaylor = Poly(GiveTaylorList(self.tied_objects[0],0,3))
             newtaylor = Taylor(self.tied_objects[0],3,self.tied_objects[1])
             self.tied_objects[1].add_taylor(newtaylor)
             self.tied_objects[0].has_taylor = 1
