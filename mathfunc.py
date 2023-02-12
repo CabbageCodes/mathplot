@@ -748,7 +748,7 @@ class Slider:
         fullsize = env.big_font.size("a0 = " + str(D1000(self.poly.coefs[self.coef_pick][0])))
         coef_textsize = env.big_font.size("a")
 
-        pygame.draw.rect(env.screen,[0,0,0],[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - env.textY/2 + 5,fullsize[0],fullsize[1] - 10])
+        pygame.draw.rect(env.screen,[0,0,0],[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - env.textY/2 + 5,fullsize[0] + 10,fullsize[1] - 3])
 
         text1 = env.big_font.render("a",True,self.poly.coefcolor)
         # coef_textsize = env.big_font.size("a")
@@ -798,7 +798,7 @@ class Button:
     def draw(self,env):
         pygame.draw.rect(env.screen,self.color,self.rect)
         text1 = env.main_font.render(self.text,True,self.textcolor)
-        env.screen.blit(text1,[self.pos[0]+5,self.pos[1]+5])
+        env.screen.blit(text1,[self.pos[0]+5,self.pos[1]+3])
 
     def get_pressed(self):
         if self.type == "add taylor":
@@ -857,7 +857,7 @@ class Taylor:
         self.func = MathFunc("x",0,env)
         self.func.type = "non-static"
         self.func.drawtextmode = "up left taylor"
-        self.func.add_button(Button("toggle taylor text",[self,env],text = "Toggle formula"),env)
+        self.func.add_button(Button("toggle taylor text",[self,env],text = "Toggle formula type"),env)
         self.func.add_button(Button("add degree",[self,env],text = "Add term"),env)
         self.func.add_button(Button("lower degree",[self,env],text = "Remove term"),env)
         self.func.add_button(Button("delete taylor",[self,env],text = "Delete"),env)
