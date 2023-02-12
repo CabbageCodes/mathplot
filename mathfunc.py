@@ -264,6 +264,7 @@ class PlotEnv:
         pygame.init()
         self.main_font = pygame.font.Font('computer-modern\cmunorm.ttf',20)
         self.big_font = pygame.font.Font('computer-modern\cmunorm.ttf',30)
+        self.huge_font = pygame.font.Font('computer-modern\cmunorm.ttf',50)
         pygame.display.set_caption('My function plotter')
         self.screen = pygame.display.set_mode(self.dims) #,pygame.RESIZABLE)
         self.funcs = []
@@ -281,7 +282,7 @@ class PlotEnv:
 
         self.redraw = 1
 
-        self.pointnum = 10000
+        self.pointnum = 3000
 
         self.old_origin = [0,0]
 
@@ -427,12 +428,22 @@ class PlotEnv:
             t.func.graphrange[1] = b
     def drawme(self):
         self.screen.fill(self.bgcolor)
-        origin = self.point_to_screen([3,1])
+        origin = self.point_to_screen([3,0])
         imgdim = self.bg_image.get_size()
-        self.screen.blit(self.bg_image,origin)
-        self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1]])
+        origin[0] = origin[0] - floor((origin[0] - self.plotrect[0])/imgdim[0])*imgdim[0]
+        origin[1] = origin[1] - (floor((origin[1] - self.plotrect[1])/imgdim[1]))*imgdim[1]
+
+
+        if origin[1] > imgdim[0]/2:
+            self.screen.blit(self.bg_image,[origin[0],origin[1] - 2 * imgdim[1]])
+            self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1] - 2 * imgdim[1]])
+        else:
+            self.screen.blit(self.bg_image,origin)
+            self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1]])
+
         self.screen.blit(self.bg_image,[origin[0],origin[1] - imgdim[1]])
         self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1] - imgdim[1]])
+
 
 
         if self.draw_grid:
@@ -503,15 +514,17 @@ class PlotEnv:
                 t.coefslider.draw(self)
 
         if self.typing_mode:
-            helptxt = self.big_font.render("Type function:",True,[255,255,255])
-            helptxt_size = self.big_font.size("Type function:")
-            addtxt = self.big_font.render(self.add_text,True,[255,255,255])
-            addtxt_size = self.big_font.size(self.add_text)
+            helptxt = self.huge_font.render("Input new formula:",True,[255,255,255])
+            helptxt_size = self.huge_font.size("Input new formula:")
+            addtxt = self.huge_font.render(self.add_text,True,[255,255,255])
+            addtxt_size = self.huge_font.size(self.add_text)
 
-            pygame.draw.rect(self.screen,self.bgcolor,[100,100,helptxt_size[0],helptxt_size[1]+10])
-            pygame.draw.rect(self.screen,self.bgcolor,[100,100+helptxt_size[1]+10,addtxt_size[0],addtxt_size[1]])
-            self.screen.blit(helptxt,[100,100])
-            self.screen.blit(addtxt,[100,100+helptxt_size[1]+10])
+            pX = self.xdim/2 - helptxt_size[0]/2
+            pY = self.ydim/2 - helptxt_size[1]/2
+            pygame.draw.rect(self.screen,self.bgcolor,[pX,pY,helptxt_size[0]+10,helptxt_size[1]+10])
+            pygame.draw.rect(self.screen,self.bgcolor,[pX,pY+helptxt_size[1]+10,addtxt_size[0] + 10 * (addtxt_size[0] > 0),addtxt_size[1]])
+            self.screen.blit(helptxt,[pX+5,pY])
+            self.screen.blit(addtxt,[pX+5,pY+helptxt_size[1]+10])
 
     def erase_taylor(self,taylor):
         if taylor in self.taylors:
