@@ -1,6 +1,6 @@
 from mathfunc import *
 
-mainenv = PlotEnv([1400,800],[0,0,0])
+mainenv = PlotEnv([1600,1000],[0,0,0])
 mainenv.set_plot_limits([-8,8],[-3,4])
 mainenv.axescolor = [150,150,150]
 
@@ -33,7 +33,7 @@ running = 1
 move_slider_mode = 0
 
 prev_time = Time.time()
-FPS = 120
+FPS = 240
 
 
 while running:
@@ -102,6 +102,14 @@ while running:
                     for tay2 in mainenv.taylors:
                         if tay2 != adjust_coef_taylor_choice:
                             tay2.adjust_coefs = 0
+            if not found and open_func_menu:
+                for b in func_menu_choice.fmenu.buttons:
+                    if isInRect(mpos,b.rect):
+                        mainenv.redraw = 1
+                        open_func_menu = 0
+                        found = 1
+                        b.get_pressed()
+                        break
             if not found:
                 for func in mainenv.funcs:
                     if isInRect(mpos,func.hitbox):
@@ -132,14 +140,6 @@ while running:
                     for tay in mainenv.taylors:
                         if tay.func != func_menu_choice:
                             tay.func.fmenu.visible = 0
-            if not found and open_func_menu:
-                for b in func_menu_choice.fmenu.buttons:
-                    if isInRect(mpos,b.rect):
-                        mainenv.redraw = 1
-                        open_func_menu = 0
-                        found = 1
-                        b.get_pressed()
-                        break
             if not found:
                 if mainenv.adjust_coef_mode:
                     mainenv.adjust_coef_mode = 0

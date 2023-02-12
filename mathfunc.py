@@ -273,10 +273,11 @@ class PlotEnv:
         self.axesthickness = 1
         self.sliders = []
 
+        self.bg_image = pygame.image.load("bb.png")
+
         self.redraw = 1
 
-        self.pointnum = 5000
-        self.pointnum = 5000
+        self.pointnum = 2000
 
         self.old_origin = [0,0]
 
@@ -327,7 +328,7 @@ class PlotEnv:
         self.set_graph_limits()
         self.redraw = 1
 
-        func1.setgraphparam(self.graph_colors[self.total_graphs],1)
+        func1.setgraphparam(self.graph_colors[self.total_graphs],3)
         func1.initext = self.graph_names[self.total_graphs] + "(x) = "
         self.total_graphs += 1
 
@@ -345,7 +346,7 @@ class PlotEnv:
         tay1.update_point(tay1.slider.pos,self)
         self.redraw = 1
 
-        tay1.func.setgraphparam(self.graph_colors[self.total_graphs],1)
+        tay1.func.setgraphparam(self.graph_colors[self.total_graphs],3)
         tay1.taylorpoly.linecolor = tay1.func.color
         tay1.taylorpoly.initext = self.graph_names[self.total_graphs] + "(x) = "
         self.total_graphs += 1
@@ -413,6 +414,14 @@ class PlotEnv:
             t.func.graphrange[1] = b
     def drawme(self):
         self.screen.fill(self.bgcolor)
+        origin = self.point_to_screen([3,1])
+        imgdim = self.bg_image.get_size()
+        self.screen.blit(self.bg_image,origin)
+        self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1]])
+        self.screen.blit(self.bg_image,[origin[0],origin[1] - imgdim[1]])
+        self.screen.blit(self.bg_image,[origin[0] - imgdim[0],origin[1] - imgdim[1]])
+
+
         if self.draw_grid:
             # horizontal
             y_coord = floor(self.plotlimitY[0])
@@ -823,7 +832,7 @@ class Taylor:
         self.func.add_button(Button("delete taylor",[self,env],text = "Delete"),env)
         self.func.formula = self.taylorpoly.giveformula()
 
-        self.func.setgraphparam([255,255,255],1)
+        self.func.setgraphparam([255,255,255],4)
 
         self.taylorpoly.linecolor = self.func.color
 
