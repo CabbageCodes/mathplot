@@ -7,7 +7,7 @@ mainenv.axescolor = [150,150,150]
 color_blue = [103,167,214]
 
 
-MyFunc1 = MathFunc("cos(x)",0)
+MyFunc1 = MathFunc("cos(x)",0,mainenv)
 MyFunc1.setderivlist(["cos(x)","-sin(x)","-cos(x)","sin(x)","cos(x)"])
 MyFunc1.snaps = [0,pi/2,pi,2*pi,3*pi/2,5*pi/2,-pi/2,-3*pi/2,-5*pi/2,-pi,-2*pi]
 

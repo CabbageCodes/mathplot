@@ -1,6 +1,9 @@
 import pygame
 import time as Time
 from pygame import gfxdraw
+from sympy import var
+from sympy import sympify
+from sympy.utilities.lambdify import lambdify
 import numpy as np
 from math import atan2, cos, degrees, radians, sin, exp, sqrt, floor, pi
 
@@ -277,7 +280,7 @@ class PlotEnv:
 
         self.redraw = 1
 
-        self.pointnum = 2000
+        self.pointnum = 10000
 
         self.old_origin = [0,0]
 
@@ -322,7 +325,7 @@ class PlotEnv:
         func1.set_hitbox(self)
         func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1] + 50 + (10 + self.textY) * func1.draw_id])
         func1.fmenu.setbuttons(self)
-        func1.setpoints(self.give_range_long())
+        func1.setpoints(self.give_range_long(),self.give_drawrange_long())
         func1.setgraph(self)
         self.funcs.append(func1)
         self.set_graph_limits()
@@ -338,7 +341,7 @@ class PlotEnv:
         tay1.func.set_hitbox(self)
         tay1.func.fmenu.setpos([tay1.func.hitbox[0],tay1.func.hitbox[1] + 60])
         tay1.func.fmenu.setbuttons(self)
-        tay1.func.setpoints(self.give_range_long())
+        tay1.func.setpoints(self.give_range_long(),self.give_drawrange_long())
         tay1.func.setgraph(self)
         # tay1.func.draw_id = len(self.taylors)
         self.taylors.append(tay1)
@@ -372,17 +375,21 @@ class PlotEnv:
         for f in self.funcs:
             if f.type == "static":
                 for i in range(0,self.pointnum):
-                    f.graph[i][1] += new_origin[1] - self.old_origin[1]
-                    f.graph[i][0] += new_origin[0] - self.old_origin[0]
+                    f.graph[i] += new_origin[1] - self.old_origin[1]
+                    f.drawpoints[i] += new_origin[0] - self.old_origin[0]
             else:
-                f.reset_graph(self)
+                f.setgraph(self)
+                for i in range(0,self.pointnum):
+                    f.drawpoints[i] += new_origin[0] - self.old_origin[0]
         for t in self.taylors:
             if t.func.type == "static":
                 for i in range(0,self.pointnum):
-                    t.func.graph[i][1] += new_origin[1] - self.old_origin[1]
-                    t.func.graph[i][0] += new_origin[0] - self.old_origin[0]
+                    t.func.graph[i] += new_origin[1] - self.old_origin[1]
+                    t.func.drawpoints[i] += new_origin[0] - self.old_origin[0]
             else:
                 t.func.reset_graph(self)
+                for i in range(0,self.pointnum):
+                    t.func.drawpoints[i] += new_origin[0] - self.old_origin[0]
         self.old_origin = new_origin
 
 
@@ -392,15 +399,20 @@ class PlotEnv:
         return np.linspace(self.plotlimitX[0],self.plotlimitX[1],1000)
     def give_range_long(self):
         return np.linspace(self.initial_limits[0],self.initial_limits[1],self.pointnum)
+
+    def give_drawrange_long(self):
+        A = self.point_to_screen([self.initial_limits[0],0])[0]
+        B = self.point_to_screen([self.initial_limits[1],0])[0]
+        return np.linspace(A,B,self.pointnum)
     def add_slider(self,slider1):
         self.sliders.append(slider1)
     def setallpoints(self):
         for f in self.funcs:
-            f.setpoints(self.give_range_long())
+            f.setpoints(self.give_range_long(),self.give_drawrange_long())
             f.setgraph(self)
 
         for t in self.taylors:
-            t.func.setpoints(self.give_range_long())
+            t.func.setpoints(self.give_range_long(),self.give_drawrange_long())
             t.func.setgraph(self)
         self.set_graph_limits()
     def set_graph_limits(self):
@@ -525,12 +537,15 @@ class PlotEnv:
 
 
 class MathFunc:
-    def __init__(self,formula,draw_id):
+    def __init__(self,formula,draw_id,env):
         self.formula = formula.replace("^","**")
+        vx = var('x')
+        self.sfunc = lambdify(vx,self.formula)
         self.color = [255,255,255]
         self.thickness = 2
-        self.points = [0,1]
-        self.graph = []
+        self.graph = np.zeros(env.pointnum)
+        self.points = env.give_range_long()
+        self.drawpoints = env.give_drawrange_long()
         self.derivlist = []
         self.evalmax = 1000000
         self.evalmin = -1000000
@@ -578,11 +593,14 @@ class MathFunc:
         
     def setfunc(self,formula,env):
         self.formula = formula.replace("^","**")
+        vx = var('x')
+        self.sfunc = lambdify(vx,self.formula)
         if self.formula == "exp(x)":
             self.setderivlist(["exp(x)","exp(x)","exp(x)","exp(x)","exp(x)","exp(x)"])
         elif self.formula == "cos(x)":
             self.setderivlist(["cos(x)","-sin(x)","-cos(x)","sin(x)","cos(x)"])
         self.set_hitbox(env)
+        # self.setgraph(env)
         if self.type == "static":
             self.setgraph(env)
         else:
@@ -599,23 +617,36 @@ class MathFunc:
     def setgraphparam(self,color,thickness):
         self.color = color
         self.thickness = thickness
-    def setpoints(self,points):
+    def setpoints(self,points,drawpoints):
         self.points = points
+        self.drawpoints = drawpoints
     def setgraph(self,env):
-        self.graph = []
-        for p in self.points:
-            self.graph.append(env.point_to_screen([p,self.evaluate(p)]))
+
+        # xcoord = self.plotrect[0] + self.plotrect[2]*(point[0] - self.plotlimitX[0])/(self.plotlimitX[1] - self.plotlimitX[0])
+        # ycoord = self.plotrect[1] + self.plotrect[3] - self.plotrect[3] * (point[1] - self.plotlimitY[0])/(self.plotlimitY[1] - self.plotlimitY[0])
+
+
+        self.graph = map(self.sfunc,self.points)
+        self.graph = [env.plotrect[1] + env.plotrect[3] - env.plotrect[3] * (PP - env.plotlimitY[0])/(env.plotlimitY[1] - env.plotlimitY[0]) for PP in self.graph]
+        # .append(env.point_to_screen([p,self.evaluate(p)]))
+
     def reset_graph(self,env):
-        for k in range(max(0,self.graphrange[0]),min(self.graphrange[1]+1,env.pointnum-1)):
-            self.graph[k] = env.point_to_screen([self.points[k],self.evaluate(self.points[k])])
+        A = max(0,self.graphrange[0])
+        B = min(self.graphrange[1]+1,env.pointnum-1)
+
+        self.graph[A : B] = map(self.sfunc,self.points[A : B])
+
+        self.graph[A : B] = [env.plotrect[1] + env.plotrect[3] - env.plotrect[3] * (PP - env.plotlimitY[0]) / (env.plotlimitY[1] - env.plotlimitY[0]) for PP in self.graph[A : B]]
+        # for k in range(max(0,self.graphrange[0]),min(self.graphrange[1]+1,env.pointnum-1)):
+        #     self.graph[k] = env.point_to_screen([self.points[k],self.evaluate(self.points[k])])
 
     # def translate_graph(self):
 
     def plot(self,env):
         # pygame.draw.aalines(env.screen,self.color,0,self.graph)
         for p in range(max(0,self.graphrange[0]),min(env.pointnum-2,self.graphrange[1])):
-            p1 = self.graph[p]
-            p2 = self.graph[p+1]
+            p1 = [self.drawpoints[p],self.graph[p]]
+            p2 = [self.drawpoints[p+1],self.graph[p+1]]
             # pygame.gfxdraw.line(env.screen,p1[0],p1[1],p2[0],p2[1],self.color,self.thickness)
             if 0 <= p1[1] - env.plotrect[1] <= env.plotrect[3] and 0 <= p2[1] - env.plotrect[1] <= env.plotrect[3]:
                 # DrawThickLine(env.screen,p1,p2,self.thickness,self.color)
@@ -823,7 +854,7 @@ class Taylor:
         self.taylorpoly = Poly(GiveTaylorList(origfunc,self.center,degree))
 
 
-        self.func = MathFunc("x",0)
+        self.func = MathFunc("x",0,env)
         self.func.type = "non-static"
         self.func.drawtextmode = "up left taylor"
         self.func.add_button(Button("toggle taylor text",[self,env],text = "Toggle formula"),env)
@@ -831,6 +862,8 @@ class Taylor:
         self.func.add_button(Button("lower degree",[self,env],text = "Remove term"),env)
         self.func.add_button(Button("delete taylor",[self,env],text = "Delete"),env)
         self.func.formula = self.taylorpoly.giveformula()
+        vx = var('x')
+        self.func.sfunc = lambdify(vx,self.func.formula)
 
         self.func.setgraphparam([255,255,255],4)
 
