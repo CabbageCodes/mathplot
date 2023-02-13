@@ -148,9 +148,9 @@ class Poly:
 
             initxt = env.big_font.render(self.initext,True,[255,255,255])
             inisize = env.big_font.size(self.initext)
-            inioffset = 30 + 20 + inisize[0]
-            Xoffset = 30
-            Yoffset = 30 + self.draw_id * (env.textY + 10)
+            inioffset = env.border_padding[0] + 20 + inisize[0]
+            Xoffset = env.border_padding[0]
+            Yoffset = env.border_padding[1] + self.draw_id * (env.textY + 10)
             pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
             text_plus = env.big_font.render("+",True,[255,255,255])
             env.screen.blit(initxt,[Xoffset + 50,Yoffset])
@@ -191,9 +191,9 @@ class Poly:
 
             initxt = env.big_font.render(self.initext,True,[255,255,255])
             inisize = env.big_font.size(self.initext)
-            inioffset = 30 + 20 + inisize[0]
-            Xoffset = 30
-            Yoffset = 30 + self.draw_id * (env.textY + 10)
+            inioffset = env.border_padding[0] + 20 + inisize[0]
+            Xoffset = env.border_padding[0]
+            Yoffset = env.border_padding[1] + self.draw_id * (env.textY + 10)
 
             pygame.draw.line(env.screen,self.linecolor,[Xoffset,Yoffset],[Xoffset + 30,Yoffset + env.textY],4)
             text_plus = env.big_font.render("+",True,[255,255,255])
@@ -255,6 +255,7 @@ class Poly:
 
 class PlotEnv:
     def __init__(self,dims,bgcolor):
+
         self.dims = dims
         self.xdim = dims[0]
         # self.xmidpoint = floor(self.xdim/2)
@@ -289,6 +290,8 @@ class PlotEnv:
         self.draw_grid = 1
         self.grid_size = 1
         self.grid_color = [50,50,50]
+
+        self.border_padding = [30,30]
 
         self.typing_mode = 0
         self.add_text = ""
@@ -586,9 +589,9 @@ class MathFunc:
     def set_hitbox(self,env):
         textsize = env.big_font.size(self.initext + self.formula)
         if self.drawtextmode == "up right":
-            self.hitbox = [env.xdim - 20 - textsize[0] - 50,20 + (10+textsize[1]) * (self.draw_id),60,60]
+            self.hitbox = [env.xdim - env.border_padding[0] - textsize[0] - 50,env.border_padding[1] + (10+textsize[1]) * (self.draw_id),60,60]
         elif self.drawtextmode == "up left taylor":
-            self.hitbox = [20,20 + (10+textsize[1]) * (self.draw_id),60,60]
+            self.hitbox = [env.border_padding[0],env.border_padding[1] + (10+textsize[1]) * (self.draw_id),60,60]
 
     def drawtext(self,env): # draw the formula of a function. note: this is also where the function menu hitbox will appear
         mystr = self.initext + self.formula
@@ -596,12 +599,12 @@ class MathFunc:
         textsize = env.big_font.size(mystr)
 
         if self.drawtextmode == "up right":
-            env.screen.blit(text1,[env.xdim - 10 - textsize[0], 20])
-            pygame.draw.line(env.screen,self.color,[env.xdim - 10 - textsize[0] - 50, 20],[env.xdim - 10 - textsize[0] - 20, 20 + textsize[1]],4)
+            env.screen.blit(text1,[env.xdim - env.border_padding[0] - textsize[0], env.border_padding[1]])
+            pygame.draw.line(env.screen,self.color,[env.xdim - env.border_padding[0] - textsize[0] - 50, env.border_padding[1]],[env.xdim - env.border_padding[0] - textsize[0] - 20, env.border_padding[1] + textsize[1]],4)
 
         elif self.drawtextmode == "up left":
-            pygame.draw.line(env.screen,self.color,[30, 20 + textsize[1]/2],[60, 20 + textsize[1]/2],4)
-            env.screen.blit(text1,[80, 20])
+            pygame.draw.line(env.screen,self.color,[env.border_padding[0], env.border_padding[1] + textsize[1]/2],[env.border_padding[0] + 30, env.border_padding[1] + textsize[1]/2],4)
+            env.screen.blit(text1,[env.border_padding[0] + 50, env.border_padding[1]])
         
     def setfunc(self,formula,env): # if we need to change the formula of the function we call this
         self.formula = formula.replace("^","**")
