@@ -1,6 +1,8 @@
+import pygame
+
 from mathfunc import *
 
-mainenv = PlotEnv([1600,1000],[0,0,0])
+mainenv = PlotEnv([1600,1000],[0,0,0],5000)
 mainenv.set_plot_limits([-8,8],[-3,4])
 mainenv.axescolor = [150,150,150]
 
@@ -25,7 +27,7 @@ myrange = np.linspace(mainenv.plotlimitX[0],mainenv.plotlimitX[1],1000)
 mainenv.setallpoints()
 
 open_func_menu = 0
-func_menu_choice = MyFunc1
+menu_choice = mainenv.menus[0]
 
 move_plotrect_mode = 0
 
@@ -103,43 +105,55 @@ while running:
                         if tay2 != adjust_coef_taylor_choice:
                             tay2.adjust_coefs = 0
             if not found and open_func_menu:
-                for b in func_menu_choice.fmenu.buttons:
+                for b in menu_choice.buttons:
                     if isInRect(mpos,b.rect):
                         mainenv.redraw = 1
-                        open_func_menu = 0
+                        if menu_choice.vis_mode == "normal":
+                            open_func_menu = 0
                         found = 1
                         b.get_pressed()
                         break
             if not found:
+                for menu in mainenv.menus:
+                    if isInRect(mpos,menu.hitbox):
+                        if not open_func_menu:
+                            open_func_menu = 1
+                            menu_choice = menu
+                            found = 1
+                            mainenv.redraw = 1
+                            break
+                        else:
+                            open_func_menu = 0
+                            menu_choice.visible = 0
                 for func in mainenv.funcs:
-                    if isInRect(mpos,func.hitbox):
+                    if isInRect(mpos,func.fmenu.hitbox):
 
                         if not open_func_menu:
                             open_func_menu = 1
-                            func_menu_choice = func
+                            menu_choice = func.fmenu
                             found = 1
                             mainenv.redraw = 1
                             break
                         else:
                             open_func_menu = 0
-                            func_menu_choice.fmenu.visible = 0
+                            menu_choice.visible = 0
                 for tay in mainenv.taylors:
-                    if isInRect(mpos,tay.func.hitbox):
+                    if isInRect(mpos,tay.func.fmenu.hitbox):
                         if not open_func_menu:
                             open_func_menu = 1
-                            func_menu_choice = tay.func
+                            menu_choice = tay.func.fmenu
                             found = 1
                             mainenv.redraw = 1
                             break
                         else:
                             open_func_menu = 0
-                            func_menu_choice.fmenu.visible = 0
+                            menu_choice.visible = 0
                 if found:
                     for func in mainenv.funcs:
-                        if func != func_menu_choice:
+                        if func.fmenu != menu_choice:
                             func.fmenu.visible = 0
                     for tay in mainenv.taylors:
-                        if tay.func != func_menu_choice:
+                        if tay.func.fmenu != menu_choice:
                             tay.func.fmenu.visible = 0
             if not found:
                 if mainenv.adjust_coef_mode:
@@ -149,7 +163,7 @@ while running:
                 mainenv.redraw = 1
                 if open_func_menu:
                     open_func_menu = 0
-                    func_menu_choice.fmenu.visible = 0
+                    menu_choice.visible = 0
 
                 if isInRect(mpos,mainenv.plotrect):
                     move_plotrect_mode = 1
@@ -201,9 +215,9 @@ while running:
             adjust_coef_taylor_choice.func.setfunc(adjust_coef_taylor_choice.taylorpoly.giveformula(),mainenv)
         adjust_coef_taylor_choice.coefslider.set_Spos()
     if open_func_menu:
-        func_menu_choice.fmenu.visible = 1
+        menu_choice.visible = 1
     else:
-        func_menu_choice.fmenu.visible = 0
+        menu_choice.visible = 0
     if move_plotrect_mode:
         mpos = pygame.mouse.get_pos()
         mainenv.translate_pos(mpos,start_pos,old_lims)

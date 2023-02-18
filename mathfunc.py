@@ -254,7 +254,7 @@ class Poly:
 
 
 class PlotEnv:
-    def __init__(self,dims,bgcolor):
+    def __init__(self,dims,bgcolor,pnum):
 
         self.dims = dims
         self.xdim = dims[0]
@@ -283,7 +283,7 @@ class PlotEnv:
 
         self.redraw = 1
 
-        self.pointnum = 3000
+        self.pointnum = pnum
 
         self.old_origin = [0,0]
 
@@ -325,10 +325,20 @@ class PlotEnv:
         inisize = self.big_font.size("f(x) = ")
         self.textY = inisize[1]
 
+        mymenu = FMenu([Button("zoom in",self,"+"),Button("zoom out",self,"-")])
+        mymenu.graphic = "Menu"
+        mymenu.drawtype = "horizontal"
+        mymenu.menupos = [0 + self.border_padding[0], self.ydim - self.border_padding[1] - 20]
+        mymenu.set_hitbox(self,"down left","Menu",0)
+        mymenu.setbuttons(self)
+        mymenu.vis_mode = "stay"
+
+        self.menus = [mymenu]
+
     def add_func(self,func1):
         func1.draw_id = len(self.funcs)
-        func1.set_hitbox(self)
-        func1.fmenu.setpos([func1.hitbox[0],func1.hitbox[1] + 50 + (10 + self.textY) * func1.draw_id])
+        func1.fmenu.set_hitbox(self,func1.drawtextmode,func1.initext + func1.formula,func1.draw_id)
+        func1.fmenu.setpos([func1.fmenu.hitbox[0],func1.fmenu.hitbox[1] + 50 + (10 + self.textY) * func1.draw_id])
         func1.fmenu.setbuttons(self)
         func1.setpoints(self.give_range_long(),self.give_drawrange_long())
         func1.setgraph(self)
@@ -343,8 +353,8 @@ class PlotEnv:
     def add_taylor(self,tay1):
         tay1.func.draw_id = len(self.taylors)
         tay1.taylorpoly.draw_id = len(self.taylors)
-        tay1.func.set_hitbox(self)
-        tay1.func.fmenu.setpos([tay1.func.hitbox[0],tay1.func.hitbox[1] + 60])
+        tay1.func.fmenu.set_hitbox(self,tay1.func.drawtextmode,tay1.func.initext + tay1.func.formula,tay1.func.draw_id)
+        tay1.func.fmenu.setpos([tay1.func.fmenu.hitbox[0],tay1.func.fmenu.hitbox[1] + 60])
         tay1.func.fmenu.setbuttons(self)
         tay1.func.setpoints(self.give_range_long(),self.give_drawrange_long())
         tay1.func.setgraph(self)
@@ -505,16 +515,17 @@ class PlotEnv:
                 t.slider.drawtext(self)
 
         for f in self.funcs:
-            if f.fmenu.visible:
-                f.fmenu.draw(self)
+            f.fmenu.draw(self)
 
         for t in self.taylors:
-            if t.func.fmenu.visible:
-                t.func.fmenu.draw(self)
+            t.func.fmenu.draw(self)
 
         for t in self.taylors:
             if t.adjust_coefs:
                 t.coefslider.draw(self)
+
+        for m in self.menus:
+            m.draw(self)
 
         if self.typing_mode:
             helptxt = self.huge_font.render("Input new formula:",True,[255,255,255])
@@ -572,7 +583,7 @@ class MathFunc:
 
         self.initext = "f(x) = "
         self.draw_id = draw_id
-        self.hitbox = [0,0,0,0]
+
         self.graphrange = [0,0]
 
         self.type = "static"
@@ -585,13 +596,6 @@ class MathFunc:
     def add_button(self,button,env):
         self.fmenu.buttons.append(button)
         self.fmenu.setbuttons(env)
-
-    def set_hitbox(self,env):
-        textsize = env.big_font.size(self.initext + self.formula)
-        if self.drawtextmode == "up right":
-            self.hitbox = [env.xdim - env.border_padding[0] - textsize[0] - 50,env.border_padding[1] + (10+textsize[1]) * (self.draw_id),60,60]
-        elif self.drawtextmode == "up left taylor":
-            self.hitbox = [env.border_padding[0],env.border_padding[1] + (10+textsize[1]) * (self.draw_id),60,60]
 
     def drawtext(self,env): # draw the formula of a function. note: this is also where the function menu hitbox will appear
         mystr = self.initext + self.formula
@@ -609,9 +613,7 @@ class MathFunc:
     def setfunc(self,formula,env): # if we need to change the formula of the function we call this
         self.formula = formula.replace("^","**")
 
-        self.set_hitbox(env)
-        self.fmenu.setpos([self.hitbox[0],self.hitbox[1] + 50 + (10 + env.textY) * self.draw_id])
-        self.fmenu.setbuttons(env)
+        # self.fmenu.set_hitbox(env)
 
         vx = var('x')
         self.sfunc = lambdify(vx,self.formula)
@@ -621,7 +623,9 @@ class MathFunc:
             self.derivlist.append(mystr)
             mystr = str(diff(mystr))
 
-        self.set_hitbox(env)
+        self.fmenu.set_hitbox(env, self.drawtextmode,self.initext + self.formula,self.draw_id)
+        self.fmenu.setpos([self.fmenu.hitbox[0],self.fmenu.hitbox[1] + 50 + (10 + env.textY) * self.draw_id])
+        self.fmenu.setbuttons(env)
 
         if self.type == "static": # the idea here is that for some functions that change a lot, it is more efficient just to recalculate their graph in the drawing range
             self.setgraph(env)
@@ -666,8 +670,8 @@ class MathFunc:
             p2 = [self.drawpoints[p+1],self.graph[p+1]]
             # pygame.gfxdraw.line(env.screen,p1[0],p1[1],p2[0],p2[1],self.color,self.thickness)
             if 0 <= p1[1] - env.plotrect[1] <= env.plotrect[3] and 0 <= p2[1] - env.plotrect[1] <= env.plotrect[3]:
-                # DrawThickLine(env.screen,p1,p2,self.thickness,self.color)
-                pygame.draw.line(env.screen,self.color,p1,p2,self.thickness+2)
+                DrawThickLine(env.screen,p1,p2,self.thickness-1,self.color)
+                # pygame.draw.line(env.screen,self.color,p1,p2,self.thickness+2)
 
 class GraphSlider: # This is a slider that moves along a graph of a function
     def __init__(self,func):
@@ -782,21 +786,57 @@ class FMenu: # Functions and other objects can have a menu where there are optio
         self.buttons = buttons
         self.visible = 0
         self.menupos = [0,0]
+        self.drawtype = "vertical"
+        self.graphic = ""
+        self.hitbox = [0,0,0,0]
+
+        self.vis_mode = "normal"
+
+    def set_hitbox(self,env,mode = "up right",text = "A",draw_id = 0):
+        textsize = env.big_font.size(text)
+        if mode == "up right":
+            self.hitbox = [env.xdim - env.border_padding[0] - textsize[0] - 50,env.border_padding[1] + (10+textsize[1]) * draw_id,60,60]
+        elif mode == "up left taylor":
+            self.hitbox = [env.border_padding[0],env.border_padding[1] + (10+textsize[1]) * draw_id,60,60]
+        elif mode == "down left":
+            self.hitbox = [self.menupos[0],self.menupos[1],textsize[0],textsize[1]]
+
 
     def setpos(self,pos):
         self.menupos = pos
 
     def setbuttons(self,env):
-        bpos = self.menupos[1]
-        for b in self.buttons:
-            b.pos = [self.menupos[0],bpos]
-            b.rect = [self.menupos[0],bpos,b.rect[2],b.rect[3]]
-            bpos += b.rect[3] + 5
-            b.set_rect_dims(env)
+        if self.drawtype == "vertical":
+            bpos = self.menupos[1]
+            for b in self.buttons:
+                b.pos = [self.menupos[0],bpos]
+                b.rect = [self.menupos[0],bpos,b.rect[2],b.rect[3]]
+                bpos += b.rect[3] + 5
+                b.set_rect_dims(env)
+        elif self.drawtype == "horizontal":
+
+            mtextsize = env.main_font.size(self.graphic)
+            bpos = self.menupos[0] + mtextsize[0] + 10
+            for b in self.buttons:
+                b.pos = [bpos,self.menupos[1]]
+                b.rect = [bpos,self.menupos[1],b.rect[2],b.rect[3]]
+                b.set_rect_dims(env)
+                bpos += b.rect[2] + 5
 
     def draw(self,env):
-        for b in self.buttons:
-            b.draw(env)
+        if self.graphic != "":
+
+            mtext = env.main_font.render(self.graphic,True,[255,255,255])
+            mtextsize = env.main_font.size(self.graphic)
+            if self.drawtype == "vertical":
+                pygame.draw.rect(env.screen,[120,120,120],[self.menupos[0],self.menupos[1] - mtextsize[1] - 10,mtextsize[0],mtextsize[1]+5])
+                env.screen.blit(mtext,[self.menupos[0],self.menupos[1] - mtextsize[1] - 5])
+            elif self.drawtype == "horizontal":
+                pygame.draw.rect(env.screen,[120,120,120],[self.menupos[0],self.menupos[1],mtextsize[0]+5,mtextsize[1]+5])
+                env.screen.blit(mtext,[self.menupos[0]+2,self.menupos[1]+3])
+        if self.visible:
+            for b in self.buttons:
+                b.draw(env)
 
 class Button:
     def __init__(self,type,tied_objects,text = "", rect = [0,0,0,0]):
@@ -807,15 +847,21 @@ class Button:
         self.rect = rect
         self.color = [120,120,120]
         self.textcolor = [255,255,255]
+        self.drawtype = "normal"
     def set_rect_dims(self,env):
         textsize = env.main_font.size(self.text)
-        self.rect[2] = textsize[0] + 15
+        self.rect[2] = textsize[0] + 10
         self.rect[3] = textsize[1] + 5
 
     def draw(self,env):
-        pygame.draw.rect(env.screen,self.color,self.rect)
-        text1 = env.main_font.render(self.text,True,self.textcolor)
-        env.screen.blit(text1,[self.pos[0]+5,self.pos[1]+3])
+        if self.drawtype == "normal":
+            pygame.draw.rect(env.screen,self.color,self.rect)
+            text1 = env.main_font.render(self.text,True,self.textcolor)
+            env.screen.blit(text1,[self.pos[0]+5,self.pos[1]+3])
+        elif self.drawtype == "picture":
+            pygame.draw.rect(env.screen,self.color,self.rect)
+            text1 = env.main_font.render(self.text,True,self.textcolor)
+            env.screen.blit(text1,[self.pos[0]+5,self.pos[1]+3])
 
     def get_pressed(self):
         if self.type == "add taylor":
