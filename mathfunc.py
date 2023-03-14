@@ -138,12 +138,14 @@ class Poly:
                 text_term = env.big_font.render(txt,True,[255,255,255])
             else:
                 # txt = "(x - " + self.centertext + ")"
-                txt = "(x - p)"
+                txt = "(x - x"
                 text_term = env.big_font.render(txt,True,[255,255,255])
+                text_term2 = env.main_font.render("0",True,[255,255,255])
+                text_term3 = env.big_font.render(")",True,[255,255,255])
             term_textsize = env.big_font.size(txt)
             coef_textsize = env.big_font.size("a")
             self.coefspace = coef_textsize[0] + 20
-            self.termspace = term_textsize[0] + 20
+            self.termspace = term_textsize[0] + 20 + 15 * (self.center != 0.0)
             self.plusspace = self.coefspace
 
             initxt = env.big_font.render(self.initext,True,[255,255,255])
@@ -155,7 +157,8 @@ class Poly:
             text_plus = env.big_font.render("+",True,[255,255,255])
             env.screen.blit(initxt,[Xoffset + 50,Yoffset])
             for k in range(self.degree):
-                text_coef = env.big_font.render("a",True,self.coefcolor)
+                if k == 2: self.termspace += 5
+                text_coef = env.big_font.render("c",True,self.coefcolor)
                 txt_exp = env.main_font.render(str(k),True,[255,255,255])
                 txt_sub = env.main_font.render(str(k),True,self.coefcolor)
                 termoffset = Xoffset + inioffset + k * (self.coefspace + self.termspace + self.plusspace) - (k>0)*self.termspace
@@ -164,14 +167,20 @@ class Poly:
                 env.screen.blit(txt_sub,[termoffset+coef_textsize[0],Yoffset + env.textY * 0.5])
                 if k > 0:
                     DrawDisk(env.screen,[termoffset+self.coefspace,Yoffset + env.textY/2],2,[255,255,255])
+
+
                     env.screen.blit(text_term,[termoffset + self.coefspace+10,Yoffset])
+                    if self.center != 0.0:
+                        env.screen.blit(text_term2,[termoffset + self.coefspace+10+term_textsize[0],Yoffset+15])
+                        env.screen.blit(text_term3,[termoffset + self.coefspace+10+term_textsize[0]+10,Yoffset])
+
                 if k > 1:
-                    env.screen.blit(txt_exp,[termoffset + self.coefspace + term_textsize[0] + 10,Yoffset - 5])
+                    env.screen.blit(txt_exp,[termoffset + self.coefspace + term_textsize[0] + 10 + 20 * (self.center != 0.0),Yoffset - 5])
                 if k < self.degree - 1:
                     if k == 0:
                         env.screen.blit(text_plus,[termoffset + self.coefspace,Yoffset])
                     else:
-                        env.screen.blit(text_plus,[termoffset + self.coefspace + term_textsize[0] + 20,Yoffset])
+                        env.screen.blit(text_plus,[termoffset + self.coefspace + term_textsize[0] + 25 + 20 * (self.center != 0.0),Yoffset])
         elif self.text_type == "formula view":
             self.clickhitboxes = []
             if abs(self.center) < 0.00000001:
@@ -263,6 +272,7 @@ class PlotEnv:
         # self.ymidpoint = floor(self.ydim/2)
         self.bgcolor = bgcolor
         pygame.init()
+        self.small_font = pygame.font.Font('computer-modern\cmunorm.ttf',14)
         self.main_font = pygame.font.Font('computer-modern\cmunorm.ttf',20)
         self.big_font = pygame.font.Font('computer-modern\cmunorm.ttf',30)
         self.huge_font = pygame.font.Font('computer-modern\cmunorm.ttf',50)
@@ -313,13 +323,12 @@ class PlotEnv:
         self.total_graphs = 0
         self.graph_names = [
             "f",
+            "P",
             "g",
             "h",
             "u",
             "v",
-            "a",
-            "b",
-            "c"
+            "w"
         ]
 
         inisize = self.big_font.size("f(x) = ")
@@ -575,6 +584,10 @@ class MathFunc:
         self.points = env.give_range_long()
         self.drawpoints = env.give_drawrange_long()
         self.derivlist = []
+        mystr = self.formula
+        for i in range(10):
+            self.derivlist.append(mystr)
+            mystr = str(diff(mystr))
         self.evalmax = 1000000
         self.evalmin = -1000000
         self.snaps = []
@@ -682,7 +695,9 @@ class GraphSlider: # This is a slider that moves along a graph of a function
         self.radiusinner = 6
         self.colorouter = [240,60,160]
         self.colorinner = [255,255,255]
-        self.text = "p = "
+        self.text1 = "x"
+        self.text2 = "0"
+        self.text3 = " = "
         self.do_drawtext = 1
     def snap(self):
         for snap in self.func.snaps:
@@ -690,12 +705,23 @@ class GraphSlider: # This is a slider that moves along a graph of a function
                 self.pos = snap
     def drawtext(self,env):
         point = env.point_to_screen([self.pos,0])
-        mystr = self.text + str(D1000(self.pos))
+
+        textsize = env.main_font.size("x ")
+
+        text1 = env.main_font.render(self.text1,True,[255,255,255])
+        env.screen.blit(text1,[point[0] + 15,point[1] - textsize[1] - 4])
+
+        text2 = env.small_font.render(self.text2,True,[255,255,255])
+        env.screen.blit(text2,[point[0] + 15 + textsize[0] - 7,point[1] - 18])
+
+
+        mystr = self.text3 + str(D1000(self.pos))
         if D100(self.pos) != self.pos:
             mystr += "..."
-        text1 = env.main_font.render(mystr,True,[255,255,255])
-        textsize = env.main_font.size(mystr)
-        env.screen.blit(text1,[point[0] + 15, point[1] - textsize[1] - 4])
+        text3 = env.main_font.render(mystr,True,[255,255,255])
+
+
+        env.screen.blit(text3,[point[0] + 15 + textsize[0], point[1] - textsize[1] - 4])
     def draw(self,env):
         point1 = env.point_to_screen([self.pos,self.func.evaluate(self.pos)])
         point2 = env.point_to_screen([self.pos,0])
@@ -766,12 +792,12 @@ class Slider: # This slider is used to change a polynomials coefficients
 
         pygame.draw.rect(env.screen,self.Scolor,self.Srect)
 
-        fullsize = env.big_font.size("a0 = " + str(D1000(self.poly.coefs[self.coef_pick][0])))
-        coef_textsize = env.big_font.size("a")
+        fullsize = env.big_font.size("c0 = " + str(D1000(self.poly.coefs[self.coef_pick][0])))
+        coef_textsize = env.big_font.size("c")
 
         pygame.draw.rect(env.screen,[0,0,0],[self.Srect[0] + self.Srect[2] + 20, self.Srect[1] - env.textY/2 + 5,fullsize[0] + 10,fullsize[1] - 3])
 
-        text1 = env.big_font.render("a",True,self.poly.coefcolor)
+        text1 = env.big_font.render("c",True,self.poly.coefcolor)
         # coef_textsize = env.big_font.size("a")
         text2 = env.main_font.render(str(self.coef_pick),True,self.poly.coefcolor)
         env.screen.blit(text1,[self.Srect[0] + self.Srect[2] + 20, self.Srect[1]  - env.textY/2])
